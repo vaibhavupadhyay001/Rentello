@@ -4,6 +4,7 @@ import numpy as np
 from dotenv import load_dotenv
 import requests
 
+# ---------------- Utility Functions ----------------
 def clean_text(text: str) -> str:
     if not text:
         return ""
@@ -29,6 +30,7 @@ def fallback_extract_lines(text: str, min_words=2, max_words=25):
             filtered.append(l)
     return filtered
 
+# ---------------- Config ----------------
 load_dotenv()
 GROQ_KEY = os.getenv("GROQ_API_KEY")
 GROQ_URL = os.getenv("GROQ_API_URL", "https://api.groq.com/openai/v1/chat/completions")
@@ -36,10 +38,15 @@ GROQ_MODEL = os.getenv("GROQ_MODEL", "qwen/qwen3-32b")
 
 app = Flask(__name__)
 
-# ✅ Correct path for Vercel deployment
+# ✅ Safe model path for Vercel
 model_path = os.path.join(os.path.dirname(__file__), "../rent_pipe.pkl")
-model = joblib.load(model_path)
+try:
+    model = joblib.load(model_path)
+except Exception as e:
+    model = None
+    print("⚠️ Model not loaded:", e)
 
+# ---------------- Local Fallback ----------------
 LOCAL_FALLBACK = {
     "tier1": [
         "Lodha World Towers — Lower Parel, Mumbai",
@@ -58,16 +65,25 @@ LOCAL_FALLBACK = {
     ]
 }
 
+# ---------------- Routes ----------------
 @app.route("/")
 def home():
-    return render_template("index.html")
+    try:
+        return render_template("index.html")
+    except:
+        return "✅ Flask app running successfully! (index.html not found)", 200
 
 @app.route("/dashboard")
 def dashboard():
-    return render_template("dashboard.html")
+    try:
+        return render_template("dashboard.html")
+    except:
+        return "Dashboard page not found", 200
 
 @app.route("/predict", methods=["POST"])
 def predict():
+    if model is None:
+        return jsonify({"error": "Model not loaded on server"}), 500
     try:
         data = request.json
         features = [[
@@ -86,6 +102,7 @@ def predict():
 def suggest():
     data = request.json or {}
     price = float(data.get("price", 0) or 0)
+
     if not GROQ_KEY:
         if price < 1_000_000:
             return jsonify({"suggestion": LOCAL_FALLBACK["tier2"]})
@@ -113,16 +130,15 @@ def suggest():
     user_prompt = (
         f"Monthly rent budget: ₹{price:,.2f}.\n"
         "Provide 3–5 SPECIFIC property suggestions suitable for this monthly rent. "
-        "Each suggestion must include PROPERTY NAME, NEIGHBORHOOD (or area), and CITY.\n\n"
+        "Each suggestion must include PROPERTY NAME, NEIGHBORHOOD, and CITY.\n\n"
         "IMPORTANT: Output ONLY a JSON array of strings. Example:\n"
-        "[\"Lodha World Towers — Lower Parel, Mumbai\", \"DLF The Crest — Gurgaon\"]\n"
-        "Do NOT include any explanation, numbers, or extra text outside the JSON array."
+        "[\"Lodha World Towers — Lower Parel, Mumbai\", \"DLF The Crest — Gurgaon\"]"
     )
 
     payload = {
         "model": GROQ_MODEL,
         "messages": [
-            {"role": "system", "content": "You are a strict real estate assistant that outputs only JSON arrays when asked."},
+            {"role": "system", "content": "You are a strict real estate assistant that outputs only JSON arrays."},
             {"role": "user", "content": user_prompt}
         ],
         "max_tokens": 220,
@@ -134,38 +150,18 @@ def suggest():
         raw_clean = clean_text(raw)
         parsed = parse_json_array(raw_clean)
         if not parsed:
-            retry_prompt = (
-                "You did not follow the output rules. NOW OUTPUT ONLY a JSON array of strings (no other text). "
-                "Each string must be 'Property Name — Area, City'.\n"
-                f"Monthly rent: ₹{price:,.2f}.\n"
-                "Example: [\"Lodha World Towers — Lower Parel, Mumbai\"]"
-            )
-            payload_retry = {
-                "model": GROQ_MODEL,
-                "messages": [
-                    {"role": "system", "content": "You are a strict real estate assistant."},
-                    {"role": "user", "content": retry_prompt}
-                ],
-                "max_tokens": 200,
-                "temperature": 0.25
-            }
-            time.sleep(0.3)
-            raw2 = call_groq(payload_retry)
-            raw2_clean = clean_text(raw2)
-            parsed = parse_json_array(raw2_clean)
-            if not parsed:
-                lines = fallback_extract_lines(raw_clean)
-                if lines:
-                    return jsonify({"suggestion": lines})
-                if price < 1_000_000:
-                    return jsonify({"suggestion": LOCAL_FALLBACK["tier2"]})
-                elif price < 10_000_000:
-                    return jsonify({"suggestion": LOCAL_FALLBACK["tier1"]})
-                else:
-                    return jsonify({"suggestion": LOCAL_FALLBACK["global"]})
+            lines = fallback_extract_lines(raw_clean)
+            if lines:
+                return jsonify({"suggestion": lines})
+            if price < 1_000_000:
+                return jsonify({"suggestion": LOCAL_FALLBACK["tier2"]})
+            elif price < 10_000_000:
+                return jsonify({"suggestion": LOCAL_FALLBACK["tier1"]})
+            else:
+                return jsonify({"suggestion": LOCAL_FALLBACK["global"]})
         return jsonify({"suggestion": parsed})
     except Exception as e:
-        import traceback; traceback.print_exc()
+        print("Suggest error:", e)
         if price < 1_000_000:
             return jsonify({"suggestion": LOCAL_FALLBACK["tier2"], "debug": str(e)})
         elif price < 10_000_000:
@@ -173,5 +169,6 @@ def suggest():
         else:
             return jsonify({"suggestion": LOCAL_FALLBACK["global"], "debug": str(e)})
 
+# ---------------- Run ----------------
 if __name__ == "__main__":
     app.run(debug=True)
