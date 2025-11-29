@@ -1,236 +1,276 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>Rentello</title>
-  <style>
-    body, html {
-      margin: 0;
-      padding: 0;
-      height: 100%;
-      width: 100%;
-      font-family: "Segoe UI", sans-serif;
-      background: #111;
-      color: white;
-      overflow: hidden;
-    }
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Rentello</title>
+<style>
+  
 
-    #bg, #reveal {
-      position: absolute;
-      top: 0; left: 0;
-      width: 100%;
-      height: 100%;
-      background-size: cover;
-      background-position: center;
-    }
-    #reveal {
-      clip-path: circle(120px at center center);
-      transition: clip-path 1.5s ease-in-out;
-    }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:"Segoe UI", Arial, sans-serif;  
+  color:white;
+   overflow-x:hidden; 
+    background:#0e0e0e; }
 
-    /* Navbar */
-    .navbar {
-      position: absolute;
-      top: 25px;
-      left: 0;
-      width: 100%;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0 40px;
-      z-index: 5;
-    }
+  
+  .page-load {
+    opacity:0;
+    transform: translateY(-30px);
+    animation: fadeUp 1.8s ease forwards;
+  }
+  @keyframes fadeUp {
+    to { opacity:1; transform: translateY(0); }
+  }
 
-    .navbar-left {
-      display: flex;
-      gap: 25px;
-      margin-left: 20px; /* ⬅️ keep left items inward */
-    }
+  
+  .navbar {
+    position: fixed; top:0; left:0; width:100%;
+    display:flex; justify-content:space-between; align-items:center;
+    padding:15px 60px; z-index:1000;
+    background: rgba(255,255,255,0.08); backdrop-filter:blur(12px);
+    border-bottom:1px solid rgba(255,255
+    ,255,0.1);
+  }
+  .navbar-left { font-size:28px; 
+     font-weight:bold;
+      letter-spacing:1px; }
 
-    .navbar-right {
-      display: flex;
-      gap: 20px;
-      margin-right: 80px; /* ⬅️ pull login/get started inward */
-    }
+  .navbar-right { display:flex;
+     gap:30px; }
 
-    .nav-btn {
-      padding: 12px 26px;
-      border: 2px solid #fff;
-      border-radius: 50px;
-      background: transparent;
-      color: #fff;
-      font-size: 18px;
-      font-weight: 500;
-      cursor: pointer;
-      transition: all 0.3s ease;
-      white-space: nowrap;
-    }
-    .nav-btn:hover {
-      background: #fff;
-      color: #000;
-    }
 
-    .title {
-      font-size: 48px;
-      font-weight: 600;
-      font-family: "Georgia", serif;
-      color: #fff;
-      text-shadow: 2px 2px 12px rgba(0,0,0,0.8);
-    }
+  .nav-btn { background:transparent;
+     border:none; 
+     color:white; 
+     font-size:16px; 
+     cursor:pointer; 
+     padding:8px 14px; 
+     border-radius:6px; 
+     transition:background 0.3s; }
 
-    /* Overlay */
-    .overlay {
-      position: absolute;
-      bottom: 0;
-      width: 100%;
-      height: 40%;
-      background: linear-gradient(to top, rgba(0,0,0,0.6), transparent);
-      z-index: 1;
-      pointer-events: none;
-    }
+  .nav-btn:hover
+   { 
+    background: rgba(255,255,255,0.15); 
+  }
 
-    /* Center Text */
-    .text-container {
-      position: absolute;
-      bottom: 32%;
-      width: 100%;
-      font-size: 95px;
-      font-weight: 400;
-      line-height: 1.8;
-      color: #fff;
-      text-shadow: 3px 3px 14px rgba(0, 0, 0, 0.9);
-      z-index: 2;
+  
+  .hero {
+    height:100vh;
+     width:100%; 
+     position:relative;
+      overflow:hidden;
+    display:flex; 
+    justify-content:center;
+     align-items:center;
+      text-align:center; 
+      padding:0 20px;
+  }
+  .bg-layer {
+    position:absolute; 
+    top:0; 
+    left:0;
+     width:100%;
+      height:100%;
+    background-size:cover;
+     background-position:center;
+    transition: opacity 2s ease-in-out, transform 8s ease-in-out;
+    z-index:-2;
+     opacity:0;
+  }
+  .bg-layer.active {
+     opacity:1; 
+     transform: scale(1.05); 
     }
-    .top-text {
-      display: block;
-      transition: opacity 0.6s ease;
-      text-align: left;
-      padding-left: 6%;
-    }
-    .bottom-text {
-      display: block;
-      transition: opacity 0.6s ease;
-      text-align: right;
-      padding-right: 6%;
-    }
+  .overlay {
+    position:absolute; 
+    top:0; 
+    left:0; 
+    width:100%;
+     height:100%;
+    background:rgba(0,0,0,0.55);
+     z-index:-1;
+  }
 
-    /* Predict Button */
-    .btn {
-      position: absolute;
-      bottom: 6%;
-      left: 50%;
-      transform: translateX(-50%);
-      font-size: 26px;
-      font-weight: 600;
-      color: #fff;
-      background: rgba(255, 255, 255, 0.15);
-      border: none;
-      border-radius: 10px;
-      cursor: pointer;
-      z-index: 3;
-      padding: 14px 36px;
-      transition: background 0.3s ease, box-shadow 0.3s ease;
-    }
+  .hero-content {
+    position: relative; 
+    z-index: 1;
+     max-width: 800px; 
+     margin: 0 auto; 
+     text-align: center;
+  }
 
-    .btn:hover {
-      background: rgba(255, 255, 255, 0.3);
-      box-shadow: 0 0 20px rgba(255, 255, 255, 0.5);
-    }
-  </style>
+
+
+  .hero-content h1, .hero-content p {
+    opacity:0; transform:translateY(30px);
+    transition: opacity 1.6s ease, transform 1.6s ease;
+  }
+
+
+  .fade-in {
+    opacity:1 !important; transform:translateY(0) !important;
+  }
+
+
+  .fade-out {
+    opacity:0 !important; transform:translateY(40px) !important;
+  }
+
+
+  .hero-content h1 {
+    font-size: 58px;
+     font-weight: 600; 
+     line-height: 1.2;
+      margin-bottom: 20px;
+    text-shadow: 3px 3px 14px rgba(0,0,0,0.9);
+  }
+
+  .hero-content p {
+    font-size: 20px; 
+    line-height: 1.6; 
+    margin-bottom: 40px;
+    text-shadow: 2px 2px 12px rgba(0,0,0,0.8);
+  }
+
+  .hero-buttons { display:flex; 
+    justify-content:center;
+     gap:20px; }
+
+  
+  .btn {
+    padding:12px 28px; 
+    font-size:16px; 
+    font-weight:500;
+    border:none; 
+    border-radius:8px; 
+    cursor:pointer;
+     transition:all 0.3s ease;
+  }
+
+  .btn-primary { background:#ff7b54; 
+    color:white; }
+
+  .btn-primary:hover { 
+    background:#ff5733; 
+    transform: scale(1.05); 
+    box-shadow:0 0 12px rgba(255,123,84,0.6); }
+
+  .btn-secondary { 
+    background: rgba(255,255,255,0.15);
+     color:white; 
+     border:1px solid rgba(255,255,255,0.3); }
+
+  .btn-secondary:hover { 
+    background: rgba(255,255,255,0.3); 
+    transform: scale(1.05);
+     }
+
+
+
+
+</style>
 </head>
 <body>
-  <div id="bg"></div>
-  <div id="reveal"></div>
+
+<div class="navbar page-load" style="animation-delay:0.2s">
+  <div class="navbar-left">Rentello</div>
+  <div class="navbar-right">
+    <button class="nav-btn">Home</button>
+    <button class="nav-btn">Listings</button>
+    <button class="nav-btn">Features</button>
+    <button class="nav-btn">Pricing</button>
+    <button class="nav-btn">Contact</button>
+  </div>
+</div>
+
+<section class="hero">
+  <div class="bg-layer active" id="bg1" style="background-image:url('/static/villa1.jpg')"></div>
+  <div class="bg-layer" id="bg2"></div>
   <div class="overlay"></div>
 
-  <!-- Navbar -->
-  <div class="navbar">
-    <div class="navbar-left">
-      <button class="nav-btn">Creators</button>
-      <button class="nav-btn">Features</button>
-      <button class="nav-btn">Pricing</button>
-    </div>
-    <div class="title">Rentello</div>
-    <div class="navbar-right">
-      <button class="nav-btn">Login</button>
-      <button class="nav-btn">Get Started</button>
+  <div class="hero-content page-load" style="animation-delay:0.6s">
+    <h1 id="heroTitle">Find Your Dream Home</h1>
+    <p id="heroDesc">Discover the best rental homes in your city with Rentello.</p>
+    <div class="hero-buttons page-load" style="animation-delay:1s">
+     <a href="dashboard.html" ><button class="btn btn-primary">Let's predict</button></a>
+      <button class="btn btn-secondary">Explore Listings</button>
     </div>
   </div>
+</section>
 
-  <!-- Center Text -->
-  <div class="text-container">
-    <span class="top-text" id="topText">Smarter renting with</span>
-    <span class="bottom-text" id="bottomText">your own ML-powered insights</span>
-  </div>
+<script>
+const images = [
+  "/static/villa4.jpg",
+  "/static/villa2.jpg",
+  "/static/villa3.jpg",
+  "/static/villa1.jpg"
+];
+const titles = [
+  "Find Your Dream Home",
+  "Live in Luxury",
+  "Modern Rentals, Simplified",
+  "Homes Tailored for You"
+];
+const descriptions = [
+  "Discover the best rental homes in your city with Rentello.",
+  "Experience premium living with beautifully designed rental properties.",
+  "Simplify your rental journey with AI-powered predictions.",
+  "Explore homes that match your lifestyle, from cozy to luxury."
+];
 
-  <!-- Predict Button -->
-  <button class="btn" id="predictBtn">Let's Predict</button>
+let index = 0;
+const bg1 = document.getElementById("bg1");
+const bg2 = document.getElementById("bg2");
+const heroTitle = document.getElementById("heroTitle");
+const heroDesc = document.getElementById("heroDesc");
+let activeBg = bg1;
 
-  <script>
-    const images = [
-      "/static/villa1.jpg",
-      "/static/villa2.jpg",
-      "/static/villa3.jpg",
-      "/static/villa4.jpg"
-    ];
+function showText(title, desc) {
+  heroTitle.textContent = title;
+  heroDesc.textContent = desc;
+  heroTitle.classList.add("fade-in");
+  heroDesc.classList.add("fade-in");
+}
 
-    const texts = [
-      ["Smarter renting with", "your own ML-powered insights"],
-      ["Real predictions meet", "luxury living made simple"],
-      ["Your dream homes across", "metros and global hubs"],
-      ["Luxury, spacious, modern", "crafted for every lifestyle"]
-    ];
+function hideText(callback) {
+  heroTitle.classList.remove("fade-in");
+  heroDesc.classList.remove("fade-in");
+  heroTitle.classList.add("fade-out");
+  heroDesc.classList.add("fade-out");
+  setTimeout(() => {
+    heroTitle.classList.remove("fade-out");
+    heroDesc.classList.remove("fade-out");
+    callback();
+  }, 1500);
+}
 
-    let current = 0;
-    const bg = document.getElementById("bg");
-    const reveal = document.getElementById("reveal");
-    const topText = document.getElementById("topText");
-    const bottomText = document.getElementById("bottomText");
+function changeSlide() {
+  const nextIndex = (index + 1) % images.length;
+  const nextBg = activeBg === bg1 ? bg2 : bg1;
+  nextBg.style.backgroundImage = `url('${images[nextIndex]}')`;
+  nextBg.classList.add("active");
 
-    let allowMouse = true;
+  hideText(() => {
+    showText(titles[nextIndex], descriptions[nextIndex]);
+  });
 
-    // preload
-    images.forEach(src => { const img = new Image(); img.src = src; });
+  setTimeout(() => {
+    activeBg.classList.remove("active");
+    activeBg = nextBg;
+    index = nextIndex;
+  }, 40);
+}
 
-    bg.style.backgroundImage = `url(${images[0]})`;
-    reveal.style.backgroundImage = `url(${images[1]})`;
 
-    document.addEventListener("mousemove", (e) => {
-      if (!allowMouse) return;
-      reveal.style.clipPath = `circle(120px at ${e.clientX}px ${e.clientY}px)`;
-    });
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    showText(titles[0], descriptions[0]);
+  }, 900);
+});
 
-    document.addEventListener("click", (event) => {
-      if (event.target.id === "predictBtn") return;
 
-      allowMouse = false;
-      reveal.style.transition = "clip-path 1.5s ease-in-out";
-      reveal.style.clipPath = "circle(150% at center center)";
-
-      topText.style.opacity = 0;
-      bottomText.style.opacity = 0;
-      setTimeout(() => {
-        current = (current + 1) % images.length;
-        topText.textContent = texts[current][0];
-        bottomText.textContent = texts[current][1];
-        topText.style.opacity = 1;
-        bottomText.style.opacity = 1;
-      }, 300);
-
-      setTimeout(() => {
-        bg.style.backgroundImage = `url(${images[current]})`;
-        const nextIndex = (current + 1) % images.length;
-        reveal.style.transition = "none";
-        reveal.style.clipPath = "circle(120px at center center)";
-        reveal.style.backgroundImage = `url(${images[nextIndex]})`;
-        allowMouse = true;
-      }, 1500);
-    });
-
-    document.getElementById("predictBtn").addEventListener("click", (e) => {
-      e.stopPropagation();
-      window.location.href = "/dashboard";
-    });
-  </script>
+setInterval(changeSlide, 6000);
+</script>
 </body>
 </html>
